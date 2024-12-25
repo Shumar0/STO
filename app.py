@@ -21,6 +21,15 @@ init_swagger(app)
 def init_db():
     db.create_all()
 
+# Test route to check database connection
+@app.route('/test-db', methods=['GET'])
+def test_db():
+    try:
+        clients = Client.query.all()
+        return jsonify({'clients': [client.first_name for client in clients]}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Microservice: Create a service request
 class CreateServiceRequest(Resource):
     def post(self):
@@ -48,7 +57,7 @@ class CreateServiceRequest(Resource):
         """
         data = request.get_json()
         if not all(key in data for key in ['client_id', 'car_id', 'service_type', 'issue_description']):
-            return jsonify({'error': 'Invalid input data'}), 400
+            return {'error': 'Invalid input data'}, 400
         
         new_request = ServiceRequest(
             client_id=data['client_id'],
@@ -58,7 +67,12 @@ class CreateServiceRequest(Resource):
         )
         db.session.add(new_request)
         db.session.commit()
-        return jsonify({'request_id': new_request.id, 'status': 'created'}), 201
+        return {
+            'request_id': new_request.id,
+            'client_id': new_request.client_id,
+            'service_type': new_request.service_type,
+            'status': 'created'
+        }, 201
 
 # Microservice: Update service request status
 class UpdateServiceRequestStatus(Resource):
@@ -85,12 +99,12 @@ class UpdateServiceRequestStatus(Resource):
         """
         data = request.get_json()
         if 'status' not in data:
-            return jsonify({'error': 'Status is required'}), 400
+            return {'error': 'Status is required'}, 400
         
         request_to_update = ServiceRequest.query.get_or_404(request_id)
         request_to_update.status = data['status']
         db.session.commit()
-        return jsonify({'status': request_to_update.status}), 200
+        return {'status': request_to_update.status}, 200
 
 # Microservice: View service request history
 class ViewServiceRequestHistory(Resource):
@@ -109,10 +123,10 @@ class ViewServiceRequestHistory(Resource):
         """
         requests = ServiceRequest.query.filter_by(client_id=client_id).all()
         if not requests:
-            return jsonify({'error': 'No requests found for this client'}), 404
+            return {'error': 'No requests found for this client'}, 404
         
         requests_list = [{'request_id': req.id, 'service_type': req.service_type, 'status': req.status} for req in requests]
-        return jsonify(requests_list), 200
+        return requests_list, 200
 
 # Microservice: Assign a master to a request
 class AssignMasterToRequest(Resource):
@@ -132,7 +146,7 @@ class AssignMasterToRequest(Resource):
         request_to_assign = ServiceRequest.query.get_or_404(request_id)
         request_to_assign.status = 'assigned'
         db.session.commit()
-        return jsonify({'status': 'master assigned', 'request_id': request_to_assign.id}), 200
+        return {'status': 'master assigned', 'request_id': request_to_assign.id}, 200
 
 # Microservice: Calculate service cost
 class CalculateServiceCost(Resource):
@@ -159,10 +173,10 @@ class CalculateServiceCost(Resource):
         """
         data = request.get_json()
         if 'service_type' not in data:
-            return jsonify({'error': 'Service type is required'}), 400
+            return {'error': 'Service type is required'}, 400
         
         cost = 100 if data['service_type'] == 'repair' else 50
-        return jsonify({'request_id': request_id, 'cost': cost}), 200
+        return {'request_id': request_id, 'cost': cost}, 200
 
 # Microservice: Create a new client
 class CreateClient(Resource):
@@ -193,7 +207,7 @@ class CreateClient(Resource):
         """
         data = request.get_json()
         if not all(key in data for key in ['first_name', 'last_name', 'phone_number']):
-            return jsonify({'error': 'Missing required fields'}), 400
+            return {'error': 'Missing required fields'}, 400
         
         new_client = Client(
             first_name=data['first_name'],
@@ -204,7 +218,10 @@ class CreateClient(Resource):
         )
         db.session.add(new_client)
         db.session.commit()
-        return jsonify({'client_id': new_client.id, 'status': 'created'}), 201
+        return {
+            'client_id': new_client.id,
+            'status': 'created'
+        }, 201
 
 # Register routes
 api.add_resource(CreateClient, '/clients')
@@ -213,7 +230,6 @@ api.add_resource(UpdateServiceRequestStatus, '/service-requests/<int:request_id>
 api.add_resource(ViewServiceRequestHistory, '/service-requests/history/<int:client_id>')
 api.add_resource(AssignMasterToRequest, '/service-requests/<int:request_id>/assign-master')
 api.add_resource(CalculateServiceCost, '/service-requests/<int:request_id>/calculate-cost')
-
 
 # Run the application
 if __name__ == '__main__':

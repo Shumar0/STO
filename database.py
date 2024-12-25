@@ -14,11 +14,12 @@ class Client(db.Model):
     phone_number = db.Column(db.String(15), nullable=False)
     email = db.Column(db.String(100), nullable=True)
     address = db.Column(db.String(200), nullable=True)
+    service_requests = db.relationship('ServiceRequest', backref='client', lazy=True)  # Зв'язок з заявками
 
 # Модель для заявки
 class ServiceRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    client_id = db.Column(db.Integer, nullable=False)
+    client_id = db.Column(db.Integer, db.ForeignKey('client.id'), nullable=False)  # Зв'язок з клієнтом
     car_id = db.Column(db.Integer, nullable=False)
     service_type = db.Column(db.String(50), nullable=False)
     issue_description = db.Column(db.String(200), nullable=False)
