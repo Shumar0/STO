@@ -1,17 +1,17 @@
 import sqlite3
 
-# Connect to the database
+# Підключення до бази даних
 conn = sqlite3.connect('sto.db')
 cursor = conn.cursor()
 
-# Query to get the list of tables
+# Запит для отримання списку таблиць
 cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
 tables = cursor.fetchall()
 
-# Print the tables
-print("Tables in the database:")
+# Вивести таблиці
+print("Таблиці в базі даних:")
 for table in tables:
     print(table[0])
 
-# Close the connection
+# Закрити з'єднання
 conn.close()

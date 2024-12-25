@@ -1,15 +1,15 @@
 from database import db, Client, ServiceRequest
 import json
 
-# Load input data
+# Завантажити вхідні дані
 with open('new_input_data.json') as f:
     input_data = json.load(f)
 
-# Insert clients
+# Вставити клієнтів
 for client in input_data['clients']:
     try:
         existing_client = Client.query.filter_by(id=client['id']).first()
-        if existing_client is None:  # Only add if the client does not exist
+        if existing_client is None:  # Додавати тільки якщо клієнт не існує
             new_client = Client(
                 id=client['id'],
                 first_name=client['first_name'],
@@ -21,14 +21,14 @@ for client in input_data['clients']:
             db.session.add(new_client)
             db.session.commit()
     except Exception as e:
-        print(f"Error adding client: {str(e)}")
+        print(f"Помилка при додаванні клієнта: {str(e)}")
 
-# Insert service requests
+# Вставити заявки на обслуговування
 for request in input_data['service_requests']:
     try:
-        # Check if the client exists before adding the service request
+        # Перевірити, чи існує клієнт перед додаванням заявки
         existing_client = Client.query.filter_by(id=request['client_id']).first()
-        if existing_client is not None:  # Only add if the client exists
+        if existing_client is not None:  # Додавати тільки якщо клієнт існує
             new_request = ServiceRequest(
                 client_id=request['client_id'],
                 car_id=request['car_id'],
@@ -38,4 +38,4 @@ for request in input_data['service_requests']:
             db.session.add(new_request)
             db.session.commit()
     except Exception as e:
-        print(f"Error adding service request: {str(e)}")
+        print(f"Помилка при додаванні заявки: {str(e)}")

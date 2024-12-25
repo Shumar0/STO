@@ -4,24 +4,24 @@ from flasgger import Swagger
 from database import db, ServiceRequest, Client
 from swagger_config import init_swagger
 
-# Initialize Flask app
+# Ініціалізувати Flask додаток
 app = Flask(__name__)
 
-# Configure database
+# Налаштування бази даних
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sto.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 
-# Initialize API and Swagger
+# Ініціалізувати API та Swagger
 api = Api(app)
 init_swagger(app)
 
-# Initialize database
+# Ініціалізувати базу даних
 @app.before_first_request
 def init_db():
     db.create_all()
 
-# Test route to check database connection
+# Тестовий маршрут для перевірки з'єднання з базою даних
 @app.route('/test-db', methods=['GET'])
 def test_db():
     try:
@@ -30,7 +30,7 @@ def test_db():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Microservice: Create a service request
+# Мікросервіс: Створити заявку на обслуговування
 class CreateServiceRequest(Resource):
     def post(self):
         """
@@ -53,11 +53,11 @@ class CreateServiceRequest(Resource):
                   type: string
         responses:
           201:
-            description: Service request created successfully
+            description: Заявку на обслуговування успішно створено
         """
         data = request.get_json()
         if not all(key in data for key in ['client_id', 'car_id', 'service_type', 'issue_description']):
-            return {'error': 'Invalid input data'}, 400
+            return {'error': 'Недійсні вхідні дані'}, 400
         
         new_request = ServiceRequest(
             client_id=data['client_id'],
@@ -71,10 +71,10 @@ class CreateServiceRequest(Resource):
             'request_id': new_request.id,
             'client_id': new_request.client_id,
             'service_type': new_request.service_type,
-            'status': 'created'
+            'status': 'створено'
         }, 201
 
-# Microservice: Update service request status
+# Мікросервіс: Оновити статус заявки на обслуговування
 class UpdateServiceRequestStatus(Resource):
     def put(self, request_id):
         """
@@ -95,22 +95,22 @@ class UpdateServiceRequestStatus(Resource):
                   type: string
         responses:
           200:
-            description: Status updated successfully
+            description: Статус успішно оновлено
         """
         data = request.get_json()
         if 'status' not in data:
-            return {'error': 'Status is required'}, 400
+            return {'error': 'Статус є обовязковим'}, 400
         
         request_to_update = ServiceRequest.query.get_or_404(request_id)
         request_to_update.status = data['status']
         db.session.commit()
         return {'status': request_to_update.status}, 200
 
-# Microservice: View service request history
+# Мікросервіс: Переглянути історію заявок на обслуговування
 class ViewServiceRequestHistory(Resource):
     def get(self, client_id):
         """
-        View service request history for a client
+        Переглянути історію заявок на обслуговування для клієнта
         ---
         parameters:
           - name: client_id
@@ -119,20 +119,20 @@ class ViewServiceRequestHistory(Resource):
             type: integer
         responses:
           200:
-            description: Service request history retrieved successfully
+            description: Історію заявок на обслуговування успішно отримано
         """
         requests = ServiceRequest.query.filter_by(client_id=client_id).all()
         if not requests:
-            return {'error': 'No requests found for this client'}, 404
+            return {'error': 'Заявки для цього клієнта не знайдено'}, 404
         
         requests_list = [{'request_id': req.id, 'service_type': req.service_type, 'status': req.status} for req in requests]
         return requests_list, 200
 
-# Microservice: Assign a master to a request
+# Мікросервіс: Призначити майстра для заявки
 class AssignMasterToRequest(Resource):
     def post(self, request_id):
         """
-        Assign a master to a service request
+        Призначити майстра для заявки на обслуговування
         ---
         parameters:
           - name: request_id
@@ -141,18 +141,18 @@ class AssignMasterToRequest(Resource):
             type: integer
         responses:
           200:
-            description: Master assigned successfully
+            description: Майстра успішно призначено
         """
         request_to_assign = ServiceRequest.query.get_or_404(request_id)
-        request_to_assign.status = 'assigned'
+        request_to_assign.status = 'призначено'
         db.session.commit()
-        return {'status': 'master assigned', 'request_id': request_to_assign.id}, 200
+        return {'status': 'майстра призначено', 'request_id': request_to_assign.id}, 200
 
-# Microservice: Calculate service cost
+# Мікросервіс: Розрахувати вартість обслуговування
 class CalculateServiceCost(Resource):
     def post(self, request_id):
         """
-        Calculate the cost of a service request
+        Розрахувати вартість заявки на обслуговування
         ---
         parameters:
           - name: request_id
@@ -169,20 +169,20 @@ class CalculateServiceCost(Resource):
                   type: string
         responses:
           200:
-            description: Cost calculated successfully
+            description: Вартість успішно розраховано
         """
         data = request.get_json()
         if 'service_type' not in data:
-            return {'error': 'Service type is required'}, 400
+            return {'error': 'Тип обслуговування є обовязковим'}, 400
         
         cost = 100 if data['service_type'] == 'repair' else 50
         return {'request_id': request_id, 'cost': cost}, 200
 
-# Microservice: Create a new client
+# Мікросервіс: Створити нового клієнта
 class CreateClient(Resource):
     def post(self):
         """
-        Create a new client
+        Створити нового клієнта
         ---
         parameters:
           - name: body
@@ -203,11 +203,11 @@ class CreateClient(Resource):
                   type: string
         responses:
           201:
-            description: Client created successfully
+            description: Клієнта успішно створено
         """
         data = request.get_json()
         if not all(key in data for key in ['first_name', 'last_name', 'phone_number']):
-            return {'error': 'Missing required fields'}, 400
+            return {'error': 'Відсутні обовязкові поля'}, 400
         
         new_client = Client(
             first_name=data['first_name'],
@@ -220,10 +220,10 @@ class CreateClient(Resource):
         db.session.commit()
         return {
             'client_id': new_client.id,
-            'status': 'created'
+            'status': 'створено'
         }, 201
 
-# Register routes
+# Реєстрація маршрутів
 api.add_resource(CreateClient, '/clients')
 api.add_resource(CreateServiceRequest, '/service-requests')
 api.add_resource(UpdateServiceRequestStatus, '/service-requests/<int:request_id>/status')
@@ -231,6 +231,6 @@ api.add_resource(ViewServiceRequestHistory, '/service-requests/history/<int:clie
 api.add_resource(AssignMasterToRequest, '/service-requests/<int:request_id>/assign-master')
 api.add_resource(CalculateServiceCost, '/service-requests/<int:request_id>/calculate-cost')
 
-# Run the application
+# Запустити програму
 if __name__ == '__main__':
     app.run(debug=True)

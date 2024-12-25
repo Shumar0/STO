@@ -4,20 +4,20 @@ def init_swagger(app):
     """
     Initialize Swagger for the application.
     """
-    # Initialize Swagger without the name argument
+    # Ініціалізувати Swagger без аргументу імені
     swagger = Swagger(app, template={
         "swagger": "2.0",
         "info": {
             "title": "STO Service API Documentation",
             "version": "1.0.0",
-            "description": "API for managing service requests at an STO"
+            "description": "API для управління заявками на обслуговування в STO"
         },
         "basePath": "/",
         "schemes": ["http"],
         "paths": {
             "/clients": {
                 "post": {
-                    "summary": "Create a new client",
+                    "summary": "Створити нового клієнта",
                     "parameters": [
                         {
                             "name": "body",
@@ -36,15 +36,15 @@ def init_swagger(app):
                         }
                     ],
                     "responses": {
-                        "201": {"description": "Client created successfully"},
-                        "400": {"description": "Missing required fields"},
-                        "500": {"description": "Error creating client"}
+                        "201": {"description": "Клієнта успішно створено"},
+                        "400": {"description": "Відсутні обов'язкові поля"},
+                        "500": {"description": "Помилка при створенні клієнта"}
                     }
                 }
             },
             "/service-requests": {
                 "post": {
-                    "summary": "Create a new service request",
+                    "summary": "Створити нову заявку на обслуговування",
                     "parameters": [
                         {
                             "name": "body",
@@ -62,16 +62,15 @@ def init_swagger(app):
                         }
                     ],
                     "responses": {
-                        "201": {"description": "Service request created successfully"},
-                        "400": {"description": "Error creating service request"},
-                        "500": {"description": "Error processing request"}
+                        "201": {"description": "Заявку на обслуговування успішно створено"},
+                        "400": {"description": "Помилка при створенні заявки на обслуговування"},
+                        "500": {"description": "Помилка обробки запиту"}
                     }
                 }
             }
         }
     })
     
-    # Register Swagger blueprint manually if needed
+    # Зареєструвати Swagger blueprint вручну, якщо потрібно
     if 'flasgger' not in app.blueprints:
         app.register_blueprint(swagger.blueprint)
-
