@@ -1,6 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
-import uuid  # Importing UUID for unique number generation
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sto.db'
@@ -9,8 +8,7 @@ db = SQLAlchemy(app)
 
 # Модель для клієнта
 class Client(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    unique_number = db.Column(db.String(36), unique=True, nullable=False)  # Unique identifier
+    id = db.Column(db.Integer, primary_key=True)  # Unique ID generated automatically
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     phone_number = db.Column(db.String(15), nullable=False)
@@ -28,14 +26,11 @@ class ServiceRequest(db.Model):
 
 # Функція для створення таблиць
 def create_tables():
-    db.drop_all()  # Drop existing tables
-    db.create_all()  # Create new tables
+    db.create_all()
 
 # Функція для додавання нового клієнта
 def add_client(first_name, last_name, phone_number, email=None, address=None):
-    unique_number = str(uuid.uuid4())  # Generate a unique number
     new_client = Client(
-        unique_number=unique_number,
         first_name=first_name,
         last_name=last_name,
         phone_number=phone_number,
