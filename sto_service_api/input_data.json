@@ -1,0 +1,23 @@
+{
+    "create_service_request": {
+        "client_id": 1,
+        "car_id": 101,
+        "service_type": "repair",
+        "issue_description": "Engine overheating"
+    },
+    "update_service_request_status": {
+        "request_id": 1,
+        "status": "in progress"
+    },
+    "view_service_request_history": {
+        "client_id": 1
+    },
+    "assign_master_to_request": {
+        "request_id": 1,
+        "master_id": 5
+    },
+    "calculate_service_cost": {
+        "request_id": 1,
+        "service_type": "repair"
+    }
+}
