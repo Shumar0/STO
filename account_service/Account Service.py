@@ -1,18 +1,19 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import jwt_required
-from swagger_config import init_swagger  # Import Swagger config
+from swagger_config import init_swagger 
+import requests
+
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/shared_service.db'  # Use a shared database
-app.config['JWT_SECRET_KEY'] = 'your_secret_key'  # Set your JWT secret key
-app.config['JWT_HEADER_NAME'] = 'Authorization'  # Set JWT header name
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///D:/Study/Fourth year/СОАПЗ/STO_project/databases/shared_service.db'  
+app.config['JWT_HEADER_NAME'] = 'Authorization'  
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # Initialize Swagger
-init_swagger(app)  # Initialize Swagger using the imported config
+init_swagger(app)  
 
 # Client model
 class Client(db.Model):
@@ -25,6 +26,25 @@ class Client(db.Model):
 def create_tables():
     db.create_all()  # Create all tables
     db.session.commit()  # Commit changes to ensure tables are created
+
+# Register service with the service registry
+def register_service():
+    service_info = {
+        'name': 'Account Service',
+        'url': 'http://localhost:5001',
+        'status': 'active'
+    }
+    # Register the service with the service registry
+    response = requests.post('http://localhost:5000/services', json=service_info)
+    existing_services = requests.get('http://localhost:5000/services').json()
+    if any(service['name'] == service_info['name'] for service in existing_services):
+        print('Service is already registered.')
+        return
+
+    if response.status_code == 201:
+        print('Service registered successfully.')
+    else:
+        print('Failed to register service:', response.json())
 
 # Example endpoint to create a client
 @app.route('/clients', methods=['POST'])
@@ -75,4 +95,5 @@ def delete_client(client_id):
     return {'message': 'Client deleted successfully'}, 200
 
 if __name__ == '__main__':
+    register_service() 
     app.run(port=5001, debug=True)

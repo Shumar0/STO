@@ -1,18 +1,23 @@
 from flask import Flask, request, jsonify
+import os  # Import os module for file operations
+import sys
+import signal
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import jwt_required
-from swagger_config import init_swagger  # Import Swagger config
+from swagger_config import init_swagger  
+from sqlalchemy import inspect
 
+print("Starting Order Management Service...")
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/shared_service.db'  # Use a shared database
-app.config['JWT_SECRET_KEY'] = 'your_secret_key'  # Set your JWT secret key
-app.config['JWT_HEADER_NAME'] = 'Authorization'  # Set JWT header name
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///D:/Study/Fourth year/СОАПЗ/STO_project/databases/order_service.db'  
+app.config['JWT_SECRET_KEY'] = 'your_secret_key'  
+app.config['JWT_HEADER_NAME'] = 'Authorization'  
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 # Initialize Swagger
-init_swagger(app)  # Initialize Swagger using the imported config
+init_swagger(app) 
 
 # Order model
 class Order(db.Model):
@@ -21,23 +26,26 @@ class Order(db.Model):
     product_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
 
-# Create tables
+# Create tables if they do not exist
 @app.before_first_request
 def create_tables():
-    db.create_all()  # Create all tables
-    db.session.commit()  # Commit changes to ensure tables are created
-    if not Order.query.first():  # Check if there are no orders
-        sample_order = Order(user_id=1, product_name='Sample Product', quantity=10)
-        db.session.add(sample_order)
-        db.session.commit()  # Add a sample order
+    print("Creating tables...")
+    print("Database URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+    
+    try:
+        # Drop existing tables
+        db.drop_all()  # Drop all tables if they exist
+        db.create_all()  # Create all tables
+        print("Tables created successfully.")
+    except Exception as e:
+        print("Error creating tables:", e)
 
 # Example endpoint to create an order
 @app.route('/orders', methods=['POST'])
-# Remove JWT authentication
 def create_order():
     data = request.get_json()
     new_order = Order(
-        user_id=data['user_id'],
+        client_id=data['client_id'],
         product_name=data['product_name'],
         quantity=data['quantity']
     )
@@ -49,7 +57,7 @@ def create_order():
 @app.route('/orders', methods=['GET'])
 def get_orders():
     orders = Order.query.all()
-    return jsonify([{'id': order.id, 'user_id': order.user_id, 'product_name': order.product_name, 'quantity': order.quantity} for order in orders]), 200
+    return jsonify([{'id': order.id, 'client_id': order.client_id, 'product_name': order.product_name, 'quantity': order.quantity} for order in orders]), 200
 
 # Endpoint to retrieve an order by ID
 @app.route('/orders/<int:order_id>', methods=['GET'])
@@ -57,7 +65,7 @@ def get_order(order_id):
     order = Order.query.get_or_404(order_id)
     return {
         'id': order.id,
-        'user_id': order.user_id,
+        'client_id': order.client_id,
         'product_name': order.product_name,
         'quantity': order.quantity
     }, 200
@@ -81,6 +89,27 @@ def delete_order(order_id):
     db.session.delete(order)
     db.session.commit()
     return {'message': 'Order deleted successfully'}, 200
+
+@app.before_first_request
+def register_service():
+    service_info = {
+        'name': 'Order Management Service',
+        'url': 'http://localhost:5002',
+        'status': 'active'
+    }
+
+def stop_service():
+    print("Stopping Order Management Service...")
+    sys.exit(0)
+
+def restart_service():
+    print("Restarting Order Management Service...")
+    stop_service()
+    os.execv(sys.executable, ['python'] + sys.argv)
+
+# Add signal handler for graceful shutdown
+signal.signal(signal.SIGINT, lambda s, f: stop_service())
+signal.signal(signal.SIGTERM, lambda s, f: stop_service())
 
 if __name__ == '__main__':
     app.run(port=5002, debug=True)
