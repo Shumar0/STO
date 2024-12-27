@@ -6,6 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import jwt_required
 from swagger_config import init_swagger  
 from sqlalchemy import inspect
+import requests
 
 print("Starting Order Management Service...")
 app = Flask(__name__)
@@ -18,6 +19,12 @@ db = SQLAlchemy(app)
 
 # Initialize Swagger
 init_swagger(app) 
+
+# Client model
+class Client(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
 
 # Order model
 class Order(db.Model):
@@ -39,6 +46,29 @@ def create_tables():
         print("Tables created successfully.")
     except Exception as e:
         print("Error creating tables:", e)
+# Register service with the service registry
+def register_service():
+    service_info = {
+        'name': 'Order Management Service',
+        'url': 'http://localhost:5002',
+        'status': 'active'
+    }
+    # Register the service with the service registry
+    response = requests.post('http://localhost:5000/services', json=service_info)
+    if response.status_code == 201:
+        print('Order Management Service registered successfully.')
+    else:
+        print('Failed to register Order Management Service:', response.text)  # Changed to response.text
+        print('Response Status Code:', response.status_code)
+        print('Response Content:', response.content)
+
+# Add signal handler for graceful shutdown
+signal.signal(signal.SIGINT, lambda s, f: stop_service())
+signal.signal(signal.SIGTERM, lambda s, f: stop_service())
+
+if __name__ == '__main__':
+    register_service()  # Ensure the service registers itself
+    app.run(port=5002, debug=True)
 
 # Example endpoint to create an order
 @app.route('/orders', methods=['POST'])
@@ -90,8 +120,20 @@ def delete_order(order_id):
     db.session.commit()
     return {'message': 'Order deleted successfully'}, 200
 
-@app.before_first_request
 def register_service():
+    service_info = {
+        'name': 'Order Management Service',
+        'url': 'http://localhost:5002',
+        'status': 'active'
+    }
+    # Register the service with the service registry
+    response = requests.post('http://localhost:5000/services', json=service_info)
+    if response.status_code == 201:
+        print('Order Management Service registered successfully.')
+    else:
+        print('Failed to register Order Management Service:', response.json())
+        print('Response Status Code:', response.status_code)
+        print('Response Content:', response.content)
     service_info = {
         'name': 'Order Management Service',
         'url': 'http://localhost:5002',
